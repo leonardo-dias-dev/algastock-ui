@@ -1,11 +1,17 @@
-import React, {JSX, useState} from 'react';
+import React, {JSX, useEffect, useState} from 'react';
 import Swal, {SweetAlertResult} from 'sweetalert2'
 import './App.css';
-import Products, {Product} from '../../shared/Table/Table.mockdata';
+import {Product} from '../../shared/Table/Table.mockdata';
 import ProductForm, {ProductCreator} from '../Products/ProductForm';
+import {
+    createSingleProduct,
+    deleteSingleProduct,
+    getAllProducts,
+    updateSingleProduct
+} from '../../services/Products.service';
+import Table, {TableHeader} from "../../shared/Table/Table";
 import Header from "../Header/Header";
 import Container from "../../shared/Container/Container";
-import Table, {TableHeader} from "../../shared/Table/Table";
 
 const headers: TableHeader[] = [
     {key: 'id', value: '#'},
@@ -15,34 +21,51 @@ const headers: TableHeader[] = [
 ]
 
 function App(): JSX.Element {
-    const [products, setProducts] = useState(Products)
-    const [updatingProduct, setUpdatingProduct] = useState<Product | undefined>(products[0])
+    const [products, setProducts] = useState<Product[]>([])
+    const [updatingProduct, setUpdatingProduct] = useState<Product | undefined>(undefined)
 
-    const handleProductSubmit = (product: ProductCreator): void => {
-        setProducts([
-            ...products,
-            {
-                id: products.length + 1,
-                ...product
-            }
-        ])
+    async function fetchData(): Promise<void> {
+        const _products: Product[] = await getAllProducts();
+        setProducts(_products);
     }
 
-    const handleProductUpdate = (newProduct: Product): void => {
-        setProducts(products.map((product: Product): Product =>
-            product.id === newProduct.id
-                ? newProduct
-                : product
-        ))
+    useEffect((): void => {
+        fetchData();
+    }, []);
 
-        setUpdatingProduct(undefined)
+    async function handleProductSubmit(product: ProductCreator): Promise<void> {
+        try {
+            await createSingleProduct(product)
+            fetchData()
+        } catch (err) {
+            if (err instanceof Error)
+                Swal.fire('Oops!', err.message, 'error')
+        }
     }
 
-    const deleteProduct = (id: number): void => {
-        setProducts(products.filter((product: Product): boolean => product.id !== id))
+    async function handleProductUpdate(newProduct: Product): Promise<void> {
+        try {
+            await updateSingleProduct(newProduct)
+            setUpdatingProduct(undefined)
+            fetchData()
+        } catch (err) {
+            if (err instanceof Error)
+                Swal.fire('Oops!', err.message, 'error')
+        }
     }
 
-    const handleProductDelete = (product: Product): void => {
+    async function deleteProduct(id: string): Promise<void> {
+        try {
+            await deleteSingleProduct(id)
+            fetchData()
+            Swal.fire('Uhul!', 'Product successfully deleted', 'success')
+        } catch (err) {
+            if (err instanceof Error)
+                Swal.fire('Oops!', err.message, 'error')
+        }
+    }
+
+    function handleProductDelete(product: Product): void {
         Swal
             .fire({
                 title: 'Are you sure?',
@@ -55,17 +78,12 @@ function App(): JSX.Element {
             })
             .then((result: SweetAlertResult): void => {
                 if (result.value) {
-                    deleteProduct(product.id)
-                    Swal.fire(
-                        'Deleted!',
-                        'Your file has been deleted.',
-                        'success'
-                    )
+                    deleteProduct(product._id)
                 }
             })
     }
 
-    const handleProductDetail = (product: Product): void => {
+    function handleProductDetail(product: Product): void {
         Swal.fire(
             'Product details',
             `${product.name} costs $${product.price} and we have ${product.stock} available in stock.`,
@@ -73,7 +91,7 @@ function App(): JSX.Element {
         )
     }
 
-    const handleProductEdit = (product: Product): void => {
+    function handleProductEdit(product: Product): void {
         setUpdatingProduct(product)
     }
 
@@ -81,20 +99,14 @@ function App(): JSX.Element {
         <div className="App">
             <Header title="AlgaStock"/>
             <Container>
-                <Table
-                    headers={headers}
-                    data={products}
-                    enableActions
-                    onDelete={handleProductDelete}
-                    onDetail={handleProductDetail}
-                    onEdit={handleProductEdit}
-                />
+                <Table headers={headers} data={products} enableActions
+                       onDelete={handleProductDelete}
+                       onDetail={handleProductDetail}
+                       onEdit={handleProductEdit}/>
 
-                <ProductForm
-                    form={updatingProduct}
-                    onSubmit={handleProductSubmit}
-                    onUpdate={handleProductUpdate}
-                />
+                <ProductForm form={updatingProduct}
+                             onSubmit={handleProductSubmit}
+                             onUpdate={handleProductUpdate}/>
             </Container>
         </div>
     );

@@ -1,12 +1,11 @@
-import React, {useState, useEffect, JSX} from 'react'
-
+import React, {useEffect, useState} from 'react'
 import {Product} from '../../shared/Table/Table.mockdata'
 import Form from "../../shared/Form/Form";
 import Input from "../../shared/Input/Input";
 import Button from "../../shared/Button/Button";
 
 declare interface InitialFormState {
-    id?: number
+    _id?: string
     name: string
     price: string
     stock: string
@@ -27,7 +26,7 @@ declare interface ProductFormProps {
 function ProductForm(props: ProductFormProps): JSX.Element {
     const initialFormState: InitialFormState = props.form
         ? {
-            id: props.form.id,
+            _id: props.form._id,
             name: props.form.name,
             price: String(props.form.price),
             stock: String(props.form.stock),
@@ -42,20 +41,20 @@ function ProductForm(props: ProductFormProps): JSX.Element {
 
     useEffect((): void => {
         setForm(initialFormState)
-    }, [props.form])
+    }, [props.form]);
 
-    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    function handleInputChange(event: React.ChangeEvent<HTMLInputElement>): void {
         const {value, name} = event.target
 
         setForm({
             ...form,
             [name]: value
-        })
+        });
     }
 
-    const updateProduct = (product: InitialFormState): void => {
+    function updateProduct(product: InitialFormState): void {
         const productDto = {
-            id: Number(product.id),
+            _id: String(product._id),
             name: String(product.name),
             price: parseFloat(product.price),
             stock: Number(product.stock)
@@ -65,7 +64,7 @@ function ProductForm(props: ProductFormProps): JSX.Element {
         props.onUpdate(productDto)
     }
 
-    const createProduct = (product: InitialFormState): void => {
+    function createProduct(product: InitialFormState): void {
         const productDto = {
             name: String(product.name),
             price: parseFloat(product.price),
@@ -76,32 +75,32 @@ function ProductForm(props: ProductFormProps): JSX.Element {
         props.onSubmit(productDto)
     }
 
-    const handleFormSubmit = (): void => {
-        form.id
+    function handleFormSubmit(): void {
+        form._id
             ? updateProduct(form)
             : createProduct(form)
 
-        setForm(initialFormState)
+        setForm(initialFormState);
     }
 
     return (
         <Form title="Product form" onSubmit={handleFormSubmit}>
-            <Input onChange={handleInputChange} value={form.name} name="name" label="Name" placeholder="E.g.: Cookie"
-                   required/>
+            <Input onChange={handleInputChange} value={form.name}
+                   name="name" label="Name" placeholder="E.g.: Cookie" required/>
 
-            <Input onChange={handleInputChange} value={form.price} name="price" label="Price" type="number" step="0.01"
-                   min="0" placeholder="E.g.: 1.25" required/>
+            <Input onChange={handleInputChange} value={form.price}
+                   name="price" label="Price" type="number" step="0.01" min="0" placeholder="E.g.: 1.25" required/>
 
-            <Input onChange={handleInputChange} value={form.stock} name="stock" label="Stock" type="number" min="0"
-                   placeholder="E.g.: 15" required/>
+            <Input onChange={handleInputChange} value={form.stock}
+                   name="stock" label="Stock" type="number" min="0" placeholder="E.g.: 15" required/>
 
             <Button>
                 {
-                    form.id ? 'Update' : 'Submit'
+                    form._id ? 'Update' : 'Submit'
                 }
             </Button>
         </Form>
     );
 }
 
-export default ProductForm;
+export default ProductForm
